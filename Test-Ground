@@ -1,0 +1,266 @@
+Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+Option Compare Text
+
+
+Sub SlightDelay()
+
+Dim i As Long
+ For i = 1 To 3
+ Debug.Print Now()
+ Sleep 1
+ Next i
+
+End Sub
+
+
+
+
+Sub ABCRapid_Click()
+
+'Make ABCDE
+Range("B25").Value = "A"
+Call SlightDelay
+Range("B26").Value = "B"
+Call SlightDelay
+Range("B27").Value = "C"
+Call SlightDelay
+Range("B28").Value = "D"
+Call SlightDelay
+Range("B29").Value = "E"
+Call SlightDelay
+
+Application.Wait Now + TimeValue("00:00:02")
+
+'Remove
+Range("B25:B29").Clear
+End Sub
+
+
+
+Option Compare Text
+
+
+Sub BoxMatch_Click()
+
+Dim Match As Boolean
+
+If Range("BoxMatch1").Value = Range("BoxMatch2").Value Then
+Match = True
+Else
+Match = False
+End If
+
+If Match = True Then MsgBox "The Values Match"
+If Match = False Then MsgBox "The Values Don't Match"
+
+
+
+End Sub
+
+Sub RefreshCurrent_Click()
+
+'Refresh days
+ActiveSheet.Calculate
+
+'Calculate current values
+Dim i As Long
+i = Range("B6").Value
+Range("C2").Value = Cells(2, 5 + i)
+Range("C3").Value = Cells(3, 5 + i)
+Range("C4").Value = Cells(4, 5 + i)
+ActiveSheet.Calculate
+
+
+
+End Sub
+
+
+Sub OneToTen_Click()
+
+Dim i As Long
+For i = 1 To 10
+Cells(28 + i, 10) = i
+Call SlightDelay
+Next i
+
+
+Application.Wait Now + TimeValue("00:00:01")
+Range("J29:J38").Clear
+
+End Sub
+
+
+
+Sub TurnRed_Click()
+
+Dim i As String
+
+i = Range("C38").Value
+
+If i = "Red" Then
+Range("C38").Font.Color = RGB(255, 0, 0)
+Else
+Range("C38").Font.Color = RGB(0, 0, 0)
+End If
+
+
+End Sub
+
+
+
+
+
+
+
+Sub WilfredOwen_Click()
+
+MsgBox "Bent double, like old beggars under sacks," & vbNewLine & "Knock-kneed, coughing like hags, we cursed through sludge"
+
+
+
+End Sub
+
+
+
+Sub IntheBox_Click()
+
+MsgBox Range("RgBox").Value & " is in the box"
+
+
+End Sub
+
+
+
+Sub AddEuroSign_Click()
+
+ActiveCell.Value = "€"
+
+
+End Sub
+
+
+
+
+Sub MakeCellsBlue_Click()
+
+Dim Answer As Integer
+
+Answer = MsgBox("Do you want to make cells blue?", vbYesNo + vbQuestion)
+
+If Answer = vbYes Then
+
+Range("B15:D16").Select
+Selection.Cells.Interior.ColorIndex = 25
+
+Else
+Range("B15:D16").Select
+Selection.Cells.Interior.ColorIndex = 0
+
+End If
+
+
+End Sub
+
+Sub ABC_Click()
+
+'Make ABC
+Range("B18").Value = "A"
+Application.Wait (Now + TimeValue("00:00:01"))
+Range("B19").Value = "B"
+Application.Wait (Now + TimeValue("00:00:01"))
+Range("B20").Value = "C"
+Application.Wait (Now + TimeValue("00:00:01"))
+
+'Remove
+Range("B18:B20").Clear
+
+
+End Sub
+
+Sub Multiplyby12_Click()
+
+Dim EnterValue As Long
+
+EnterValue = InputBox("Enter A Number")
+
+Range("RgBox2").Value = EnterValue * 12
+
+
+End Sub
+
+
+End Sub
+
+
+Sub ProjectEpilepsy()
+
+Dim LRandomNumber As Integer, RowI As Integer
+Dim Strip As Range
+
+
+Worksheets("Project Epilepsy").Activate
+Range("AD25").Select
+
+
+
+For l = 0 To 50
+    For i = 0 To 30
+    LRandomNumber = Int((50 - 1 + 1) * Rnd + 1)
+    Randomize
+    Cells(1, 15 + i).Interior.ColorIndex = LRandomNumber
+        For j = 0 To 60
+            Cells(j + 1, 15 + i).Interior.ColorIndex = LRandomNumber
+        Next
+    Next
+    'Call SlightDelay
+Next
+
+Range("AD25").Select
+
+
+
+End Sub
+
+Sub IndexColours_Click()
+
+Dim i As Integer
+For i = 0 To 56
+Cells(12 + i, 2) = i
+Cells(12 + i, 3).Select
+Selection.Cells.Interior.ColorIndex = i
+Next
+
+Dim Answer As Integer
+
+Answer = MsgBox("Do you want to clear index?", vbYesNo + vbQuestion)
+
+If Answer = vbYes Then
+
+Range("B12:C68").Clear
+
+Else
+End If
+
+
+End Sub
+
+
+Sub MakeCellsRed_Click()
+
+Dim Answer As Integer
+
+Answer = MsgBox("Do you want to make cells blue?", vbYesNo + vbQuestion)
+
+If Answer = vbYes Then
+
+Range("B15:D16").Select
+Selection.Cells.Interior.ColorIndex = 3
+
+Else
+Range("B15:D16").Select
+Selection.Cells.Interior.ColorIndex = 0
+
+End If
+
+
+End Sub
