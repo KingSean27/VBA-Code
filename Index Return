@@ -1,0 +1,65 @@
+
+Sub IndexReturn()
+
+Dim wb As Workbook
+Dim myfilename As String, IDEN As String, Match As String
+Dim CarryBool As Boolean, Carry As Variant
+Dim j As Integer, i As Integer
+
+
+' Open the workbook and pass it to workbook object variable
+myfilename = "\\tweuro\eudfs\User\SLeCornu\Documents\Coding Notes\Input.xlsx"
+Set wb = Workbooks.Open(myfilename)
+
+' Set variables and start point
+Workbooks("Workbook 3.xlsm").Worksheets("TradeTestSheet1").Activate
+Range("C:C").Clear
+Range("B1").Select
+j = 0
+i = 0
+
+' First loop cycles through 1st sheet values, second through values on 2nd sheet and returns matches
+Do
+    Workbooks("Workbook 3.xlsm").Worksheets("TradeTestSheet1").Activate
+    IDEN = ActiveCell.Value
+    
+    Workbooks("Input.xlsx").Worksheets("Sheet1").Activate
+    Range("B1").Select
+    
+    Do
+        Match = ActiveCell.Value
+        
+        If Match = IDEN Then
+            CarryBool = True
+            Carry = ActiveCell.Offset(0, 1).Value
+        End If
+        
+        i = i + 1
+        ActiveCell.Offset(1, 0).Activate
+        If ActiveCell.Value = "" Then Exit Do
+        If i = 50 Then Exit Do
+    Loop
+    
+    Workbooks("Workbook 3.xlsm").Worksheets("TradeTestSheet1").Activate
+    
+    If CarryBool = True Then
+        ActiveCell.Offset(0, 1).Value = Carry
+    End If
+    
+    i = 0
+    j = j + 1
+    ActiveCell.Offset(1, 0).Activate
+    CarryBool = False
+    If ActiveCell.Value = "" Then Exit Do
+    If j = 50 Then Exit Do
+Loop
+
+
+Range("C:C").NumberFormat = "#,##0"
+
+
+End Sub
+
+
+
+
