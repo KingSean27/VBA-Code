@@ -1,0 +1,283 @@
+Sub Main()
+
+'Runs all 5 macros for the sheet
+
+Clean_Data
+Refresh_Data
+Filter_DataV2
+MatchUp
+RFQCount
+
+
+
+End Sub
+
+
+Sub Clean_Data()
+'0. Detect number of rows and adjust spreadsheet for it
+
+Dim PasteRows As Integer, PrepRows As Integer, DataRows As Integer
+Dim PrepDelAddress As Variant, PrepPasteAddress As Variant, PrepDataAddress As Variant
+
+
+' Count Rows in Paste Tab
+Worksheets("Paste").Activate
+Range("A2").Activate
+PasteRows = 1
+
+Do
+    If ActiveCell.Value = "" Then Exit Do
+    ActiveCell.Offset(1, 0).Activate
+    PasteRows = PasteRows + 1
+Loop
+
+
+' ### MsgBox "There are " & PasteRows & " rows"
+PasteRows = PasteRows - 3
+
+
+' Clear Data in Prep Tab then resize it to size of data
+Worksheets("Prep").Activate
+Range("A2").Activate
+PrepRows = 1
+Do
+    If ActiveCell.Value = "" Then Exit Do
+    ActiveCell.Offset(1, 0).Activate
+    PrepRows = PrepRows + 1
+Loop
+
+Range("A3").Activate
+PrepDelAddress = ActiveCell.Offset(PrepRows, 43).Address
+Range("A3", PrepDelAddress).Clear
+' ### MsgBox "Cells have been cleared to " & PrepAddress
+Range("A3").Activate
+PrepPasteAddress = ActiveCell.Offset(PasteRows, 43).Address
+' ### MsgBox PrepPasteAddress
+
+Range("A2:AR2").Select
+Selection.AutoFill Destination:=Range("A2:AR2", PrepPasteAddress), Type:=xlFillDefault
+
+
+' Clear Data in Data Tab, then copy across data from prep
+Worksheets("Data").Activate
+Range("A2").Activate
+DataRows = 1
+Do
+    If ActiveCell.Value = "" Then Exit Do
+    ActiveCell.Offset(1, 0).Activate
+    DataRows = DataRows + 1
+Loop
+
+Range("A2").Activate
+PrepDataAddress = ActiveCell.Offset(DataRows, 44).Address
+Range("A2", PrepDataAddress).Clear
+
+Sheets("Prep").Select
+Range("A2:AR2", PrepPasteAddress).Select
+Selection.Copy
+Sheets("Data").Select
+Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+    :=False, Transpose:=False
+Application.CutCopyMode = False
+
+Columns("A:A").Select
+Selection.NumberFormat = "m/d/yyyy"
+Columns("B:D").Select
+Selection.NumberFormat = "m/d/yyyy h:mm"
+Columns("C:C").Select
+Selection.NumberFormat = "[$-F400]h:mm:ss AM/PM"
+
+'Format Rest of Data Up to 2nd Yellow line
+Range("AX3").Activate
+PrepDataAddress = ActiveCell.Offset(DataRows, 12).Address
+' ### MsgBox PrepDataAddress
+Range("AX3", PrepDataAddress).Clear
+Range("AX3").Activate
+
+
+Range("AX2:BJ2").Select
+Selection.AutoFill Destination:=Range("AX2", PrepDataAddress), Type:=xlFillDefault
+
+Range("AW2:AW15000").ClearContents
+Range("BQ3:CC15000").ClearContents
+Range("AW2").Select
+
+End Sub
+
+
+Sub Refresh_Data()
+'1. Group prices together for one trade'
+
+'Set up variables'
+Dim LstRw As Long
+Dim c As Integer, j As Integer, LstRwI As Integer
+Dim i As Long
+Dim CompTo As Variant, Comp As Variant, Rng As Variant
+Dim Data1Add As Variant, Data2Add As Variant
+
+
+Application.ScreenUpdating = False
+Application.Calculation = xlCalculationManual
+
+
+Worksheets("Data").Activate
+LstRw = Cells(Rows.Count, "C").End(xlUp).Row
+LstRwI = LstRw
+Count = 1
+CompTo = Range("C2").Value
+Rng = Range("C2").Address
+c = 1
+
+
+'Cycle through row and compare data to previous entry, if different then increase counter '
+For j = 1 To LstRwI - 1
+    Comp = Range(Rng).Value
+    If Comp <> CompTo Then
+        c = c + 1
+        CompTo = Comp
+    End If
+    Rng = Cells(j + 2, 3).Address
+    Cells(j + 1, 49).Value = c
+Next
+
+'Display number of unique values and update No.Trades, (Msg Boxes just for reference)'
+MsgBox "There are " & c & " inquires in this dataset."
+
+Worksheets("Summary").Activate
+Range("No.Trades") = c
+
+'Input c values onto second section '
+Worksheets("Data").Activate
+For i = 1 To c
+Cells(1 + i, 69) = i
+Next i
+
+
+'Resize 3rd section of data
+Range("BR2").Activate
+Data1Add = ActiveCell.Offset(c - 1, 0).Address
+Selection.AutoFill Destination:=Range("BR2", Data1Add), Type:=xlFillDefault
+
+Range("BV2").Activate
+Data2Add = ActiveCell.Offset(c - 1, 7).Address
+Range("BV2:CC2").Select
+Selection.AutoFill Destination:=Range("BV2", Data2Add), Type:=xlFillDefault
+
+
+Application.ScreenUpdating = True
+Application.Calculation = xlCalculationAutomatic
+
+
+End Sub
+
+
+Sub Filter_DataV2()
+'2. Sets up IDEN's for sorting '
+
+'Copies across IDEN's and removes duplicates'
+Worksheets("Data").Activate
+ Columns("BJ:BJ").Select
+    Selection.Copy
+    Range("BL1").Select
+    ActiveSheet.Paste
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    Application.CutCopyMode = False
+    ActiveSheet.Range("$BL$1:$BL$15000").RemoveDuplicates Columns:=1, Header:= _
+        xlYes
+        
+
+'Removes Weird Space'
+If Range("BL3").Value = "" Then
+    Range("BL4").Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.Copy
+    Range("BL3").Select
+    ActiveSheet.Paste
+End If
+
+If Range("BL2").Value = "" Then
+    Range("BL3").Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.Copy
+    Range("BL2").Select
+    ActiveSheet.Paste
+End If
+
+
+    
+Range("CE18").Select
+
+End Sub
+
+
+Sub MatchUp()
+'3. Matches up executed trade prices with dealer quotes
+
+
+Worksheets("Data").Activate
+
+Dim Rng As Range
+Dim pos As Long, rate As Long, LstRw As Long
+Dim posL As String, rateL As String, Inp As String, DealerQ As String
+Dim posLI As Integer
+Application.ScreenUpdating = False
+Application.Calculation = xlCalculationManual
+
+
+
+DealerQ = Range("Dealer").Value & "Q"
+
+LstRw = Cells(Rows.Count, "BL").End(xlUp).Row
+
+
+For Each Rng In Range("BL2:BL" & LstRw)
+    Inp = Rng
+    pos = InStr(Rng, "_")
+    rate = InStr(Rng, "__")
+    
+    If pos = 0 Then Exit For
+    
+    posL = Left(Rng, pos - 1)
+    rateL = Mid(Rng, rate + 2)
+    posLI = CInt(posL)
+    
+    If InStr(Inp, DealerQ) Then
+    Cells(posLI + 1, 73) = rateL
+    Else
+    Cells(posLI + 1, 71) = Mid(Rng, pos + 1, rate - pos - 1)
+    Cells(posLI + 1, 72) = rateL
+    End If
+    
+Next
+
+
+Application.ScreenUpdating = True
+Application.Calculation = xlCalculationAutomatic
+
+End Sub
+
+
+Sub RFQCount()
+'4. Counts unique RFQ Values
+
+Worksheets("Data").Activate
+ Columns("CJ:CJ").Select
+    Selection.Copy
+    Range("CK1").Select
+    ActiveSheet.Paste
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    Application.CutCopyMode = False
+    ActiveSheet.Range("$CK$1:$CK$15000").RemoveDuplicates Columns:=1, Header:= _
+        xlYes
+
+
+Worksheets("Summary").Activate
+Range("L9").Select
+
+End Sub
+
+
+
+
