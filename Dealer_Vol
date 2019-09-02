@@ -1,0 +1,45 @@
+Sub Update()
+
+Dim FirstQ As Variant, SecondQ As Variant, FirstQA As Variant, SecondQA As Variant
+Dim FirstQValue As String, SecondQValue As String
+Dim SetUp1 As String, SetUp2 As String
+
+
+Worksheets("Control").Activate
+FirstQValue = Range("C9").Value
+SecondQValue = Range("C10").Value
+
+FirstQ = Array("EUR1", "EUR1N", "GBP1", "GBP1N", "SEK1", "SEK1N", "NOK1", "NOK1N", "USD1", "USD1N", "JPY1", "JPY1N", "AUD1", "AUD1N")
+SecondQ = Array("EUR2", "EUR2N", "GBP2", "GBP2N", "SEK2", "SEK2N", "NOK2", "NOK2N", "USD2", "USD2N", "JPY2", "JPY2N", "AUD2", "AUD2N")
+
+'#### MsgBox FirstQ(1)
+'#### MsgBox FirstQValue
+
+SetUp1 = "[Date].[Hierarchy].[Year].&[" & Left(FirstQValue, 4) & "].&[" & FirstQValue & "]"
+SetUp2 = "[Date].[Hierarchy].[Year].&[" & Left(SecondQValue, 4) & "].&[" & SecondQValue & "]"
+
+'#### MsgBox SetUp
+
+FirstQA = Array(SetUp1)
+SecondQA = Array(SetUp2)
+
+j = 0
+
+For i = 2 To 8
+Worksheets(i).Activate
+
+    For x = 0 To 1
+    ActiveSheet.PivotTables(FirstQ(j)).PivotFields("[Date].[Hierarchy].[Quarter]"). _
+            VisibleItemsList = FirstQA
+    ActiveSheet.PivotTables(SecondQ(j)).PivotFields("[Date].[Hierarchy].[Quarter]"). _
+            VisibleItemsList = SecondQA
+    j = j + 1
+    Next x
+    
+Next i
+
+Worksheets("Control").Activate
+
+
+
+End Sub
