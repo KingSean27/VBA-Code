@@ -1,0 +1,201 @@
+ update_pivot()
+
+Dim dealer, period, sheetname, pivotname As String
+Dim MatIStart, MatIEnd, MatDiff As Integer
+Dim MatVal As Boolean
+Dim MatArray() As String
+Dim ProdArray() As String
+Dim Counter As Integer
+
+    
+' Set up by applying integer values to each maturity date, so we can work out the amount of strings needed in our array
+j = 1
+Worksheets("Index").Activate
+Range("D2").Activate
+
+Do
+    If ActiveCell.Value = Range("MatStart").Value Then Exit Do
+    ActiveCell.Offset(1, 0).Activate
+    j = j + 1
+    If j = 500 Then Exit Do
+Loop
+
+ActiveCell.Offset(0, 1).Activate
+MatIStart = ActiveCell.Value
+Range("D2").Activate
+j = 1
+
+Do
+    If ActiveCell.Value = Range("MatEnd").Value Then Exit Do
+    ActiveCell.Offset(1, 0).Activate
+    j = j + 1
+    If j = 500 Then Exit Do
+Loop
+
+ActiveCell.Offset(0, 1).Activate
+MatIEnd = ActiveCell.Value
+MatDiff = MatIEnd - MatIStart
+
+If MatDiff < 0 Then
+    MsgBox "Please end valid maturity dates!!!"
+    MatVal = False
+    Else
+    MatVal = True
+    End If
+    
+
+' Resizes the array to the size of MatDiff and loads the approripate strings in it
+ReDim MatArray(0 To MatDiff)
+
+
+Range("F2").Activate
+ActiveCell.Offset(MatIStart - 1, 0).Activate
+For i = LBound(MatArray) To UBound(MatArray)
+    MatArray(i) = ActiveCell.Value
+    ActiveCell.Offset(1, 0).Activate
+Next i
+
+'Test everything in the array has loaded properly
+' #### Uncomment if you want to test
+
+' #### MsgBox "MatIStart= " & MatIStart & " " & "MatEnd = " & MatIEnd & " " & "MatDiff = " & MatDiff
+' #### Range("Test").Activate
+' #### For i = LBound(MatArray) To UBound(MatArray)
+' ####    ActiveCell.Value = MatArray(i)
+' ####    ActiveCell.Offset(1, 0).Activate
+' #### Next i
+
+
+'Loads Prod Array
+ReDim ProdArray(0 To 1)
+Worksheets("config").Activate
+Range("L5").Activate
+For i = 0 To 1
+    ProdArray(i) = ActiveCell.Value
+    ActiveCell.Offset(1, 0).Activate
+Next i
+
+ 
+'Check fields and update if they have changed
+Worksheets("Report").Activate
+i = 1
+While Sheets("config").Range("e1").Offset(i, 0).Value <> ""
+    sheetname = Sheets("config").Range("d1").Offset(i, 0).Value
+    pivotname = Sheets("config").Range("e1").Offset(i, 0).Value
+    
+    
+    ' Period Check
+    If Sheets("config").Range("B1").Value = "Need Update" Then
+    Sheets(sheetname).PivotTables(pivotname).PivotFields("[Date].[Hierarchy].[Year]").CurrentPageName = Sheets("config").Range("L2").Value
+    End If
+    
+    
+    ' Dealer Check
+    If Sheets("config").Range("B2").Value = "Need Update" Then
+        If Sheets("Report").Range("J5").Value = "All" Then
+            Sheets(sheetname).PivotTables(pivotname).PivotFields("[Dealer].[Dealer].[Dealer]").ClearAllFilters
+        Else
+            Sheets(sheetname).PivotTables(pivotname).PivotFields("[Dealer].[Dealer].[Dealer]").CurrentPageName = Sheets("config").Range("L3").Value
+        End If
+    End If
+    
+    
+    ' Currency Check
+    If Sheets("config").Range("B3").Value = "Need Update" Then
+        If Sheets("Report").Range("J8").Value = "All" Then
+            Sheets(sheetname).PivotTables(pivotname).PivotFields("[Currency].[Currency].[Currency]").ClearAllFilters
+        Else
+            Sheets(sheetname).PivotTables(pivotname).PivotFields("[Currency].[Currency].[Currency]").CurrentPageName = Sheets("config").Range("L4").Value
+        End If
+    End If
+    
+    
+    ' Product Check
+    If Sheets("config").Range("B4").Value = "Need Update" Then
+        If Sheets("Report").Range("J9").Value = "All" Then
+            Sheets(sheetname).PivotTables(pivotname).PivotFields("[Product].[Productgroup].[Productgroup]").ClearAllFilters
+        Else
+            If Sheets("Report").Range("K9").Value = "" Then
+                Sheets(sheetname).PivotTables(pivotname).PivotFields("[Product].[Productgroup].[Productgroup]").CurrentPageName = Sheets("config").Range("L5").Value
+            Else
+                Sheets(sheetname).PivotTables(pivotname).CubeFields(107).EnableMultiplePageItems = True
+                Sheets(sheetname).PivotTables(pivotname).PivotFields("[Product].[Productgroup].[Productgroup]").VisibleItemsList = ProdArray()
+            End If
+        End If
+    End If
+
+
+    ' Maturity Check
+    If Sheets("config").Range("B5").Value = "Need Update" Then
+        If Range("MatStart").Value = "All" And Range("MatEnd").Value = "All" Then
+           Sheets(sheetname).PivotTables(pivotname).PivotFields("[MaturityDate].[Maturity Date Quarter].[Maturity Date Quarter]").ClearAllFilters
+        Else
+            If MatVal = True Then
+                Sheets(sheetname).PivotTables(pivotname).PivotFields("[MaturityDate].[Maturity Date Quarter].[Maturity Date Quarter]").VisibleItemsList = MatArray()
+            Else
+                MatVal = False
+            End If
+        End If
+    End If
+    
+
+i = i + 1
+
+Wend
+
+
+' Input Values used into Index Sheet, so config will know whether to update or not
+Range("PrevMatStart").Value = Range("MatStart").Value
+Range("PrevMatEnd").Value = Range("MatEnd").Value
+Range("PrevProd1").Value = Range("Prod1").Value
+Range("PrevProd2").Value = Range("Prod2").Value
+
+
+MsgBox "****************" & vbNewLine & "   All Updated   " & vbNewLine & "****************"
+
+'Format_Table ()
+
+End Sub
+
+Sub Format_Table()
+
+Dim Hide As Boolean
+Dim j As Integer
+Dim Thold As Variant
+
+
+'Copy across values from report sheet
+Worksheets("Report").Activate
+Range("InqWeighting").Select
+Selection.Copy
+    
+Worksheets("Print").Activate
+Range("B4").Select
+Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+        
+        
+'Unhide everything then cycle through bottom line and check whether is below threshold, if it is hide column
+Columns("B:AV").EntireColumn.Hidden = False
+Range("C44").Select
+j = 4
+Thold = Range("Threshold").Value
+
+Do
+    ActiveCell.Offset(0, 1).Activate
+    If ActiveCell.Value < Thold Then Hide = True
+    
+    If Hide = True Then
+        Columns(j).EntireColumn.Hidden = True
+    End If
+    
+    ' ### MsgBox Hide
+    j = j + 1
+    Hide = False
+    If ActiveCell.Value = "END" Then Exit Do
+    If j = 55 Then Exit Do
+Loop
+
+Application.CutCopyMode = False
+    
+End Sub
