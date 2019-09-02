@@ -1,0 +1,324 @@
+Sub Finder()
+
+Dim Word As String
+
+Word = "Hello"
+
+    Cells.Find(What:=Word, After:=ActiveCell, LookIn:=xlFormulas, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+        
+End Sub
+Sub Example()
+
+
+Dim wb As Workbook
+Dim myfilename As String, IDEN As String, Match As String
+Dim CarryBool As Boolean, Carry As Variant
+Dim j As Integer, i As Integer
+
+
+' Open the workbook and pass it to workbook object variable
+myfilename = "\\tweuro\eudfs\User\SLeCornu\Documents\Coding Notes\Input.xlsx"
+Set wb = Workbooks.Open(myfilename)
+
+' Set variables and start point
+Workbooks("Index Match.xlsm").Worksheets("TradeTestSheet1").Activate
+Range("C:C").Clear
+Range("B1").Select
+j = 0
+i = 0
+
+' First loop cycles through 1st sheet values, second through values on 2nd sheet and returns matches
+Do
+    Workbooks("Index Match.xlsm").Worksheets("TradeTestSheet1").Activate
+    IDEN = ActiveCell.Value
+    
+    Workbooks("Input.xlsx").Worksheets("Sheet1").Activate
+    Range("B1").Select
+    
+    Do
+        Match = ActiveCell.Value
+        
+        If Match = IDEN Then
+            CarryBool = True
+            Carry = ActiveCell.Offset(0, 1).Value
+        End If
+        
+        i = i + 1
+        ActiveCell.Offset(1, 0).Activate
+        If ActiveCell.Value = "" Then Exit Do
+        If i = 50 Then Exit Do
+    Loop
+    
+    Workbooks("Index Match.xlsm").Worksheets("TradeTestSheet1").Activate
+    
+    If CarryBool = True Then
+        ActiveCell.Offset(0, 1).Value = Carry
+    End If
+    
+    i = 0
+    j = j + 1
+    ActiveCell.Offset(1, 0).Activate
+    CarryBool = False
+    If ActiveCell.Value = "" Then Exit Do
+    If j = 50 Then Exit Do
+Loop
+
+
+Range("C:C").NumberFormat = "#,##0"
+
+
+
+End Sub
+
+Sub UKData()
+
+Dim Dealers() As String
+Dim Client As String, Status As String, StringD As String
+Dim TradeCount As Integer, DealerCount As Integer, EUCount As Integer, NonEUCount As Integer
+Dim ClientCount As Integer, SEFCount As Integer
+Dim EUy As Integer, EUn As Integer
+
+
+On Error Resume Next
+
+'------> 1. Set up variables and load dealers into an array
+Worksheets("FrontSheet").Select
+DealerCount = Range("Dlrs").Count
+' ### MsgBox DealerCount
+StringD = ""
+
+ReDim Dealers(0 To DealerCount)
+
+Range("D4").Activate
+For i = LBound(Dealers) To UBound(Dealers)
+    Dealers(i) = ActiveCell.Value
+    ActiveCell.Offset(1, 0).Activate
+Next i
+
+
+EUCount = 0
+NonEUCount = 0
+
+'------> 2. Cycle through dealers
+For i = LBound(Dealers) To UBound(Dealers)
+    '###    Refresh Pivot table for certain dealer
+    '###    ActiveCell.Value = Dealers(i)
+    '###    ActiveCell.Offset(1, 0).Activate
+    
+    StringD = Dealers(i)
+   
+    Worksheets("Report").Select
+    ActiveSheet.PivotTables("DataTable").PivotFields("[Dealer].[Dealer].[Dealer]"). _
+        VisibleItemsList = Array("[Dealer].[Dealer].&" & "[" & Dealers(i) & "]")
+     
+    'MsgBox StringD & " loaded. "
+    
+    
+'------> 3. Cycle through clients and check their EUMTF status
+    For j = 0 To 150
+    
+        'Sets up client view and amount of trades they have done on ON MTF
+        Worksheets("Report").Select
+        Range("B13").Select
+        ActiveCell.Offset(j + 1, 0).Activate
+        StringC = ActiveCell.Value
+        
+        If StringC = "Grand Total" Then Exit For
+        
+        ClientCount = ClientCount + 1
+        
+        Cells.Find(What:="ON MTF Total", After:=ActiveCell, LookIn:=xlFormulas, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+        ActiveCell.Offset(j + 3, 0).Activate
+        TradeCount = ActiveCell.Value
+        
+        'Matches client on UK Clients page with EU MTF status
+        Worksheets("UK Clients").Select
+        
+        Cells.Find(What:=StringC, After:=ActiveCell, LookIn:=xlFormulas, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+        
+        ActiveCell.Offset(0, 2).Activate
+        Status = ActiveCell.Value
+        
+        
+        If Status = "Yes" Then
+                EUCount = EUCount + TradeCount
+                EUy = EUy + 1
+            Else
+                NonEUCount = NonEUCount + TradeCount
+                EUn = EUn + 1
+        End If
+        
+        
+        'Checks client SEF status and counts
+        Worksheets("SEF Clients").Select
+        
+        Cells.Find(What:=StringC, After:=ActiveCell, LookIn:=xlFormulas, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+        ActiveCell.Offset(0, 2).Activate
+        
+         If ActiveCell.Value = "YES" Then
+                SEFCount = SEFCount + 1
+        End If
+        
+        
+    Next j
+    
+    
+    
+    
+'------> 4. Compare this to values in table and add them depending on client status
+    Worksheets("FrontSheet").Select
+    Cells.Find(What:=StringD, After:=ActiveCell, LookIn:=xlFormulas, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+    ActiveCell.Offset(0, 1).Value = EUCount
+    ActiveCell.Offset(0, 2).Value = EUy
+    ActiveCell.Offset(0, 3).Value = NonEUCount
+    ActiveCell.Offset(0, 4).Value = EUn
+    ActiveCell.Offset(0, 5).Value = SEFCount / ClientCount
+    
+    
+    'Resets all counters for next loop
+    EUCount = 0: NonEUCount = 0: ClientCount = 0: SEFCount = 0: EUy = 0: EUn = 0
+
+Next i
+
+
+
+'-----> 5. Any closing stuff? Formating?
+
+
+End Sub
+
+
+Sub EUData()
+
+Dim Dealers() As String
+Dim Client As String, Status As String, StringD As String
+Dim TradeCount As Integer, DealerCount As Integer, UKCount As Integer, NonUKCount As Integer
+Dim ClientCount As Integer, SEFCount As Integer
+Dim UKy As Integer, UKn As Integer
+
+
+On Error Resume Next
+
+'------> 1. Set up variables and load dealers into an array
+Worksheets("FrontSheet").Select
+DealerCount = Range("Dlrs").Count
+' ### MsgBox DealerCount
+StringD = ""
+
+ReDim Dealers(0 To DealerCount)
+
+Range("D4").Activate
+For i = LBound(Dealers) To UBound(Dealers)
+    Dealers(i) = ActiveCell.Value
+    ActiveCell.Offset(1, 0).Activate
+Next i
+
+
+UKCount = 0
+NonUKCount = 0
+
+'------> 2. Cycle through dealers
+For i = LBound(Dealers) To UBound(Dealers)
+    '###    Refresh Pivot table for certain dealer
+    '###    ActiveCell.Value = Dealers(i)
+    '###    ActiveCell.Offset(1, 0).Activate
+    
+    StringD = Dealers(i)
+   
+    Worksheets("Report").Select
+    ActiveSheet.PivotTables("DataTable").PivotFields("[Dealer].[Dealer].[Dealer]"). _
+        VisibleItemsList = Array("[Dealer].[Dealer].&" & "[" & Dealers(i) & "]")
+     
+    'MsgBox StringD & " loaded. "
+    
+    
+'------> 3. Cycle through clients and check their EUMTF status
+    For j = 0 To 150
+    
+        'Sets up client view and amount of trades they have done on ON MTF
+        Worksheets("Report").Select
+        Range("B13").Select
+        ActiveCell.Offset(j + 1, 0).Activate
+        StringC = ActiveCell.Value
+        
+        If StringC = "Grand Total" Then Exit For
+        
+        ClientCount = ClientCount + 1
+        
+        Cells.Find(What:="EUMTF Total", After:=ActiveCell, LookIn:=xlFormulas, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+        ActiveCell.Offset(j + 3, 0).Activate
+        TradeCount = ActiveCell.Value
+        
+        'Matches client on UK Clients page with EU MTF status
+        Worksheets("EU Clients").Select
+        
+        Cells.Find(What:=StringC, After:=ActiveCell, LookIn:=xlFormulas, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+        
+        ActiveCell.Offset(0, 5).Activate
+        Status = ActiveCell.Value
+        
+        
+        If Status = "ON" Then
+                UKCount = UKCount + TradeCount
+                UKy = UKy + 1
+            Else
+                NonUKCount = NonUKCount + TradeCount
+                UKn = UKn + 1
+        End If
+        
+        
+        'Checks client SEF status and counts
+        Worksheets("SEF Clients").Select
+        
+        Cells.Find(What:=StringC, After:=ActiveCell, LookIn:=xlFormulas, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+        ActiveCell.Offset(0, 2).Activate
+        
+         If ActiveCell.Value = "YES" Then
+                SEFCount = SEFCount + 1
+        End If
+        
+        
+    Next j
+    
+    
+    
+    
+'------> 4. Compare this to values in table and add them depending on client status
+    Worksheets("FrontSheet").Select
+    Cells.Find(What:=StringD, After:=ActiveCell, LookIn:=xlFormulas, _
+        LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False).Activate
+    ActiveCell.Offset(0, 6).Value = UKCount
+    ActiveCell.Offset(0, 7).Value = UKy
+    ActiveCell.Offset(0, 8).Value = NonUKCount
+    ActiveCell.Offset(0, 9).Value = UKn
+    ActiveCell.Offset(0, 10).Value = SEFCount / ClientCount
+    
+    
+    'Resets all counters for next loop
+    UKCount = 0: NonUKCount = 0: ClientCount = 0: SEFCount = 0: UKy = 0: UKn = 0
+
+Next i
+
+
+
+'-----> 5. Any closing stuff? Formating?
+
+
+End Sub
