@@ -1,0 +1,113 @@
+Sub Update()
+
+Dim iCompany As String, iClearingHouse As String, iClearingMember As String
+Dim posCompany As Integer, posClearingHouse As Integer, posClearingMember As Integer
+Dim Match As String
+Dim posVert As Integer, posHorzCH As Integer, posHorzCM As Integer
+Dim y As Integer, x As Integer
+Dim length As Integer, width As Integer
+Dim clearaddress As Variant
+
+Application.ScreenUpdating = False
+Application.Calculation = xlCalculationManual
+
+length = 0
+width = 0
+
+'-------> 1. Clear previous area & take in values for input column
+Worksheets("Reference").Activate
+Range("G5").Activate
+
+Do
+    If ActiveCell.Value = "" Then Exit Do
+    ActiveCell.Offset(1, 0).Activate
+    length = length + 1
+Loop
+
+
+Range("G5").Activate
+Do
+    If ActiveCell.Value = "" Then Exit Do
+    ActiveCell.Offset(0, 1).Activate
+    width = width + 1
+Loop
+
+Range("H6").Activate
+clearaddress = ActiveCell.Offset(length, width).Address
+Range("H6", clearaddress).Clear
+
+posCompany = Range("posCompany").Value
+posClearingHouse = Range("posClearingHouse").Value
+posClearingMember = Range("posClearingMember").Value
+' ###   MsgBox "posCompany = " & posCompany & vbNewLine & "posClearing Member = " & posClearingHouse & vbNewLine & "posClearingMember = " & posClearingMember
+
+
+Worksheets("Input").Activate
+Range("A1").Select
+
+Do
+    '-------> 2. Cycle through input and take in values
+    Worksheets("Input").Activate
+    ActiveCell.Offset(1, posCompany - 1).Activate
+    iCompany = ActiveCell.Value
+    ActiveCell.Offset(0, posClearingHouse - posCompany).Activate
+    iClearingHouse = ActiveCell.Value
+    ActiveCell.Offset(0, posClearingMember - posClearingHouse).Activate
+    iClearingMember = ActiveCell.Value
+    
+    ' ###   MsgBox "Company = " & iCompany & vbNewLine & "Clearing House = " & iClearingHouse & vbNewLine & "Clearing Member =" & iClearingMember
+    
+    ActiveCell.Offset(0, 1 - posClearingMember).Activate
+    
+    '-------> 3. Find values of company in reference sheet and store position
+    Worksheets("Reference").Activate
+    Range("G5").Activate
+        
+    y = 1
+    Do
+        ActiveCell.Offset(1, 0).Activate
+        If ActiveCell.Value = iCompany Then posVert = y
+        y = y + 1
+        If ActiveCell.Value = "" Then Exit Do
+    Loop
+    
+    Range("G5").Activate
+    x = 1
+    Do
+        ActiveCell.Offset(0, 1).Activate
+        If ActiveCell.Value = iClearingHouse Then posHorzCH = x
+        If ActiveCell.Value = iClearingMember Then posHorzCM = x
+        x = x + 1
+        If ActiveCell.Value = "" Then Exit Do
+    Loop
+    
+    ' ###   MsgBox "posVert = " & posVert & vbNewLine & "posHorzCH = " & posHorzCH & vbNewLine & "posHorzCM = " & posHorzCM
+    
+    
+    '-------> 4. Input these values into table with a Y
+    If posVert <> 0 And posHorzCH <> 0 And posHorzCM <> 0 Then
+        Range("G5").Activate
+        ActiveCell.Offset(posVert, posHorzCH).Activate
+        ActiveCell.Value = "Y"
+        
+        Range("G5").Activate
+        ActiveCell.Offset(posVert, posHorzCM).Activate
+        ActiveCell.Value = "Y"
+    End If
+    
+    
+    Worksheets("Input").Activate
+    'If j = 500 Then Exit Do
+    j = j + 1
+    If ActiveCell.Value = "" Then Exit Do
+    posVert = 0: posHorzCH = 0: posHorzCM = 0
+Loop
+
+
+
+Application.ScreenUpdating = True
+Application.Calculation = xlCalculationAutomatic
+
+
+
+End Sub
